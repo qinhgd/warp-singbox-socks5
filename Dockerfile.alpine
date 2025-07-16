@@ -1,34 +1,44 @@
-# 基础镜像
-FROM alpine:3.17
+# 最终版 Dockerfile: arm64 专用, 全自动下载依赖
+FROM alpine:3.18
 
-# 安装依赖
-RUN apk update && apk add --no-cache \
-    curl ca-certificates iproute2 iptables \
-    wireguard-tools openresolv tar bash net-tools && \
-    rm -rf /var/cache/apk/*
+# --- 构建参数 (默认使用当前最新稳定版) ---
+ARG SINGBOX_VERSION="1.11.15"
+ARG WARP_VERSION="v2.0.2"
+ARG TARGETARCH="arm64"
 
-# 下载并安装 sing-box 官方预编译版 (适用于 arm64)
-ENV SINGBOX_VERSION=1.11.13
-RUN curl -L -o /tmp/singbox.tar.gz https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-arm64.tar.gz && \
-    cd /tmp && tar -xzf singbox.tar.gz && \
-    mv sing-box-${SINGBOX_VERSION}-linux-arm64/sing-box /usr/local/bin/sing-box && \
-    chmod +x /usr/local/bin/sing-box && \
-    rm -rf /tmp/*
+# --- 安装基础依赖 ---
+RUN apk update -f \
+  && apk --no-cache add -f \
+    curl ca-certificates unzip \
+    iproute2 net-tools iptables \
+    wireguard-tools openresolv \
+  && rm -rf /var/cache/apk/*
 
-# 安装 warp 优选工具（假设你本地准备好warp-arm64文件）
-COPY warp-arm64 /usr/local/bin/warp
-RUN chmod +x /usr/local/bin/warp
+# --- Sing-box 安装 (从官方 Release 自动下载) ---
+RUN echo ">>> Downloading Sing-box version: ${SINGBOX_VERSION}" \
+    && set -ex \
+    && curl -fsSL "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}.tar.gz" -o "/tmp/sing-box.tar.gz" \
+    && tar -xzf /tmp/sing-box.tar.gz -C /tmp \
+    && mv "/tmp/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}/sing-box" /usr/local/bin/ \
+    && chmod +x /usr/local/bin/sing-box \
+    && rm -rf /tmp/*
 
-# 安装 wgcf
+# --- WARP 工具安装 (从官方 Release 自动下载) ---
+RUN set -ex \
+    && curl -fsSL "https://github.com/P3TERX/warp.sh/releases/download/${WARP_VERSION}/warp-linux-${TARGETARCH}" -o "/usr/local/bin/warp" \
+    && chmod +x /usr/local/bin/warp
+
+# --- WGCF 安装 (从网络) ---
 RUN curl -fsSL git.io/wgcf.sh | bash
 
-# 复制固定的 singbox.json 配置文件（你需要自己准备好这个文件）
-COPY singbox.json /wgcf/singbox.json
+# --- Sing-box 配置 ---
+RUN mkdir -p /etc/sing-box
+COPY config.json /etc/sing-box/config.json
 
-# 复制启动脚本
+# --- 最终设置 ---
+WORKDIR /wgcf
+
 COPY entry.sh /entry.sh
 RUN chmod +x /entry.sh
-
-WORKDIR /wgcf
 
 ENTRYPOINT ["/entry.sh"]
