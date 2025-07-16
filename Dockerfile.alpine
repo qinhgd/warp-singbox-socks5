@@ -15,16 +15,20 @@ RUN curl -L -o /tmp/singbox.tar.gz https://github.com/SagerNet/sing-box/releases
     chmod +x /usr/local/bin/sing-box && \
     rm -rf /tmp/*
 
-# 安装 warp 优选工具（复制本地预置）
+# 安装 warp 优选工具（假设你本地准备好warp-arm64文件）
 COPY warp-arm64 /usr/local/bin/warp
 RUN chmod +x /usr/local/bin/warp
 
 # 安装 wgcf
 RUN curl -fsSL git.io/wgcf.sh | bash
 
-# 设置工作目录和启动脚本
-WORKDIR /wgcf
+# 复制固定的 singbox.json 配置文件（你需要自己准备好这个文件）
+COPY singbox.json /wgcf/singbox.json
+
+# 复制启动脚本
 COPY entry.sh /entry.sh
 RUN chmod +x /entry.sh
+
+WORKDIR /wgcf
 
 ENTRYPOINT ["/entry.sh"]
