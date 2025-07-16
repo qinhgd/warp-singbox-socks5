@@ -1,0 +1,24 @@
+
+FROM alpine:3.17
+
+RUN apk update && apk add --no-cache \
+    curl ca-certificates iproute2 iptables wireguard-tools openresolv tar bash net-tools \
+    && rm -rf /var/cache/apk/*
+
+COPY sing-box-linux-arm64.tar.gz /tmp/singbox.tar.gz
+RUN cd /tmp && tar -xf singbox.tar.gz && \
+    mv sing-box /usr/local/bin/sing-box && \
+    chmod +x /usr/local/bin/sing-box && \
+    rm -rf /tmp/*
+
+COPY warp-arm64 /usr/local/bin/warp
+RUN chmod +x /usr/local/bin/warp
+
+RUN curl -fsSL git.io/wgcf.sh | bash
+
+WORKDIR /wgcf
+COPY entry.sh /entry.sh
+COPY singbox.json.template /wgcf/singbox.json.template
+RUN chmod +x /entry.sh
+
+ENTRYPOINT ["/entry.sh"]
