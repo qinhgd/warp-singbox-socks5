@@ -17,9 +17,10 @@ RUN apk update -f \
 # --- Sing-box 安装 (从官方 Release 自动下载) ---
 RUN echo ">>> Downloading Sing-box version: ${SINGBOX_VERSION}" \
     && set -ex \
-    && curl -fsSL "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}.tar.gz" -o "/tmp/sing-box.tar.gz" \
+    # ✨ FIX: Updated the URL to match the new asset naming convention.
+    # The filename likely now includes a "-standard" suffix.
+    && curl -fsSL "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}-standard.tar.gz" -o "/tmp/sing-box.tar.gz" \
     && tar -xzf /tmp/sing-box.tar.gz -C /tmp \
-    # ✨ FIX: 使用通配符 (*) 查找解压后的目录，更具鲁棒性
     && mv /tmp/sing-box-*/sing-box /usr/local/bin/ \
     && chmod +x /usr/local/bin/sing-box \
     && rm -rf /tmp/*
