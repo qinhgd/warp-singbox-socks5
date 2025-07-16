@@ -14,16 +14,13 @@ RUN apk update -f \
     wireguard-tools openresolv \
   && rm -rf /var/cache/apk/*
 
-# --- Sing-box 安装 (从官方 Release 自动下载) ---
-RUN echo ">>> Downloading Sing-box version: ${SINGBOX_VERSION}" \
-    && set -ex \
-    # ✨ FIX: Updated the URL to match the new asset naming convention.
-    # The filename likely now includes a "-standard" suffix.
-    && curl -fsSL "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}-standard.tar.gz" -o "/tmp/sing-box.tar.gz" \
-    && tar -xzf /tmp/sing-box.tar.gz -C /tmp \
-    && mv /tmp/sing-box-*/sing-box /usr/local/bin/ \
-    && chmod +x /usr/local/bin/sing-box \
-    && rm -rf /tmp/*
+# 下载并安装 sing-box 官方预编译版 (适用于 arm64)
+ENV SINGBOX_VERSION=1.11.13
+RUN curl -L -o /tmp/singbox.tar.gz https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-arm64.tar.gz && \
+    cd /tmp && tar -xzf singbox.tar.gz && \
+    mv sing-box-${SINGBOX_VERSION}-linux-arm64/sing-box /usr/local/bin/sing-box && \
+    chmod +x /usr/local/bin/sing-box && \
+    rm -rf /tmp/*
 
 # --- WARP 工具安装 (从官方 Release 自动下载) ---
 RUN set -ex \
