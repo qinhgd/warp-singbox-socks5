@@ -29,13 +29,6 @@ run_ip_selection() {
     fi
 }
 
-inject_private_key() {
-    PRIVATE_KEY=$(grep PrivateKey /etc/wireguard/wgcf.conf | awk '{print $3}')
-    IPV4=$(grep Address /etc/wireguard/wgcf.conf | grep -v ":" | awk '{print $3}' | cut -d '/' -f1)
-    IPV6=$(grep Address /etc/wireguard/wgcf.conf | grep ":" | awk '{print $3}' | cut -d '/' -f1)
-    sed "s|__PRIVATE_KEY__|$PRIVATE_KEY|g; s|__IPV4__|$IPV4/32|g; s|__IPV6__|$IPV6/128|g" singbox.json.template > "$CONFIG_JSON"
-}
-
 _check_connection() {
     for i in $(seq 1 "$HEALTH_CHECK_RETRIES"); do
         if curl -s -m "$HEALTH_CHECK_TIMEOUT" https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp=on"; then
@@ -54,18 +47,22 @@ update_wg_endpoint() {
 _startProxy() {
     if ! pgrep -f "sing-box" > /dev/null; then
         /usr/local/bin/sing-box run -c "$CONFIG_JSON" &
+        green "[*] sing-box started"
     fi
 }
 
 run() {
     trap 'wg-quick down wgcf >/dev/null 2>&1; exit 0' TERM INT
 
+    # Warp 账号注册和生成配置
     [ ! -e wgcf-account.toml ] && wgcf register --accept-tos
     [ ! -e wgcf-profile.conf ] && wgcf generate
     cp wgcf-profile.conf /etc/wireguard/wgcf.conf
-    [ ! -f "$BEST_IP_FILE" ] && run_ip_selection
-    inject_private_key
 
+    # 生成 IP 优选列表
+    [ ! -f "$BEST_IP_FILE" ] && run_ip_selection
+
+    # 定时优化 IP
     (
         while true; do
             sleep "$OPTIMIZE_INTERVAL"
@@ -75,6 +72,7 @@ run() {
         done
     ) &
 
+    # 主循环
     while true; do
         local fail=0
         while true; do
@@ -89,7 +87,11 @@ run() {
 
         _startProxy
         while true; do
-            [ -f "$RECONNECT_FLAG_FILE" ] && rm -f "$RECONNECT_FLAG_FILE" && wg-quick down wgcf && break
+            if [ -f "$RECONNECT_FLAG_FILE" ]; then
+                rm -f "$RECONNECT_FLAG_FILE"
+                wg-quick down wgcf
+                break
+            fi
             sleep "$HEALTH_CHECK_INTERVAL"
             _check_connection || { wg-quick down wgcf && break; }
         done
