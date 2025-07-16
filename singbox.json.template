@@ -2,7 +2,6 @@
   "log": { "level": "info", "timestamp": true },
   "inbounds": [
     { "type": "mixed", "tag": "socks-in", "listen": "0.0.0.0", "listen_port": 1080, "sniff": true },
-    { "type": "http", "tag": "http-in", "listen": "0.0.0.0", "listen_port": 2080 }
   ],
   "outbounds": [
     {
@@ -10,15 +9,15 @@
       "tag": "wireguard-out",
       "server": "engage.cloudflareclient.com",
       "server_port": 2408,
-      "private_key": "__PRIVATE_KEY__",
+      "private_key": "KLo1LDq37CgF0bDNtUYb7ddKMsKXDgRYTHG5hUJE2l4=",
       "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
-      "local_address": [ "__IPV4__", "__IPV6__" ],
+      "local_address": [ "172.16.0.2/32", "2606:4700:110:846c:e510:bfa1:ea9f:5247/128" ],
       "mtu": 1280
     }
   ],
   "route": {
     "rules": [
-      { "inbound": ["socks-in", "http-in"], "outbound": "wireguard-out" }
+      { "inbound": ["socks-in"], "outbound": "wireguard-out" }
     ]
   },
   "dns": {
