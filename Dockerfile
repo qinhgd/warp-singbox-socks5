@@ -39,7 +39,8 @@ RUN curl -fsSL git.io/wgcf.sh | bash
 WORKDIR /wgcf
 COPY entry.sh /run/entry.sh
 RUN chmod +x /run/entry.sh
-
+RUN mkdir -p /etc/sing-box
+COPY config.json /etc/sing-box/config.json
 ENTRYPOINT ["/run/entry.sh"]
 
 # 默认以 IPv4 模式启动
