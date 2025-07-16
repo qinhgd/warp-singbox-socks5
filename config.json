@@ -1,31 +1,29 @@
 {
-  "log": { "level": "info", "timestamp": true },
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
   "inbounds": [
-    { "type": "mixed", "tag": "socks-in", "listen": "0.0.0.0", "listen_port": 1080, "sniff": true },
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "0.0.0.0",
+      "listen_port": 1080,
+      "sniff": true
+    }
   ],
   "outbounds": [
     {
-      "type": "wireguard",
-      "tag": "wireguard-out",
-      "server": "engage.cloudflareclient.com",
-      "server_port": 2408,
-      "private_key": "KLo1LDq37CgF0bDNtUYb7ddKMsKXDgRYTHG5hUJE2l4=",
-      "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
-      "local_address": [ "172.16.0.2/32", "2606:4700:110:846c:e510:bfa1:ea9f:5247/128" ],
-      "mtu": 1280
+      "type": "direct",
+      "tag": "direct-out"
     }
   ],
   "route": {
     "rules": [
-      { "inbound": ["socks-in"], "outbound": "wireguard-out" }
-    ]
-  },
-  "dns": {
-    "servers": [
-      { "address": "1.1.1.1" },
-      { "address": "1.0.0.1" },
-      { "address": "2606:4700:4700::1111" },
-      { "address": "2606:4700:4700::1001" }
+      {
+        "inbound": ["mixed-in"],
+        "outbound": "direct-out"
+      }
     ]
   }
 }
