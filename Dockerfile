@@ -1,14 +1,17 @@
 # ==============================================================================
 # 终极版 Dockerfile v3
 #
-# 融合了 OCI 标签、通过 Alpine testing 源安装新版 sing-box 的策略，
-# 并保留了原有的多平台支持和 warp/wgcf 自动化安装。
+# 特性:
+#   - 通过 Alpine testing 源安装新版 sing-box，稳定可靠
+#   - 完全自动化，无需本地文件
+#   - 支持多平台构建 (arm64, amd64)
+#   - 包含 OCI 标签，遵循 Docker 最佳实践
 # ==============================================================================
 
-# 1. 使用您参考的最新 Alpine 版本
-FROM alpine:3.21
+# 1. 使用较新的 Alpine 版本
+FROM alpine:3.20
 
-# 2. (采纳) 添加标准化的 OCI 标签，让镜像信息更丰富、更专业
+# 2. 添加标准化的 OCI 标签，让镜像信息更丰富、更专业
 #    请根据您的实际情况修改这些值
 LABEL maintainer="YourName <your.email@example.com>" \
       org.opencontainers.image.title="WireGuard + Sing-box HA Proxy" \
@@ -23,18 +26,18 @@ LABEL maintainer="YourName <your.email@example.com>" \
 ARG WARP_VERSION="v2.0.2"
 ARG TARGETARCH
 
-# 4. (采纳) 核心改进：启用 testing 源并使用 apk 安装 sing-box
+# 4. 核心改进：启用 testing 源并使用 apk 安装 sing-box
 #    这大大简化了 Dockerfile，同时能获取到较新版本的 sing-box
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
     set -ex && \
     apk update && \
-    # 不再需要手动下载 sing-box，直接通过 apk 安装
+    # 直接通过 apk 安装，不再需要手动下载、解压、移动
     apk add --no-cache \
         curl ca-certificates iproute2 iptables \
         wireguard-tools openresolv tar bash net-tools \
         sing-box
 
-# 5. (保留) 继续自动化安装 warp 工具，这是我们项目的功能核心之一
+# 5. 保留自动化安装 warp 工具
 RUN set -ex && \
     echo ">>> Building for architecture: ${TARGETARCH}" && \
     echo ">>> Downloading WARP tools version: ${WARP_VERSION}" && \
@@ -42,15 +45,15 @@ RUN set -ex && \
       "https://github.com/P3TERX/warp.sh/releases/download/${WARP_VERSION}/warp-linux-${TARGETARCH}" && \
     chmod +x /usr/local/bin/warp
 
-# 6. (保留) 安装 wgcf
+# 6. 安装 wgcf
 RUN curl -fsSL git.io/wgcf.sh | bash
 
-# 7. (采纳) 统一脚本路径和设置，并添加默认启动命令
+# 7. 设置工作目录、启动脚本，并提供默认启动命令
 WORKDIR /wgcf
 COPY entry.sh /run/entry.sh
 RUN chmod +x /run/entry.sh
 
 ENTRYPOINT ["/run/entry.sh"]
 
-# (采纳) 提供一个默认命令。容器启动时若不指定参数，则默认使用 IPv4 模式
+# 容器启动时若不指定参数，则默认使用 IPv4 模式
 CMD ["-4"]
