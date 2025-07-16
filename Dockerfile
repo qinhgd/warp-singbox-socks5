@@ -12,7 +12,6 @@
 FROM alpine:3.20
 
 # 2. 添加标准化的 OCI 标签，让镜像信息更丰富、更专业
-#    请根据您的实际情况修改这些值
 LABEL maintainer="YourName <your.email@example.com>" \
       org.opencontainers.image.title="WireGuard + Sing-box HA Proxy" \
       org.opencontainers.image.description="A High-Availability Docker image that connects to CloudFlare WARP and exposes a Sing-box proxy." \
