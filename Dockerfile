@@ -1,47 +1,49 @@
-# ==============================================================================
-# 定制版 Dockerfile
-#
-# 基于您的要求:
-#   - 代理核心 (sing-box) 和 wgcf 从网络自动安装。
-#   - WARP 工具 (warp-arm64) 由您手动提供并复制到镜像中。
-# ==============================================================================
-
-# 1. 使用较新的 Alpine 版本以获得安全更新
+# 最终版 Dockerfile: 集成 jq, zashboard UI, 和动态 IP 优选 (arm64)
 FROM alpine:3.20
 
-# 2. 添加标准化的 OCI 标签，让镜像信息更专业
-LABEL maintainer="YourName <your.email@example.com>" \
-      org.opencontainers.image.title="WireGuard + Sing-box HA Proxy (Custom Build)" \
-      org.opencontainers.image.description="A custom-built, High-Availability Docker image that connects to CloudFlare WARP and exposes a Sing-box proxy." \
-      org.opencontainers.image.url="https://github.com/YourName/YourRepo"
-
-# 3. 启用 testing 源，以便安装较新版本的 sing-box
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-
-# 4. 安装基础依赖和 Sing-box
-RUN set -ex && \
-    apk update && \
-    # 直接通过 apk 安装 sing-box，无需手动下载
+# 1. 安装基础依赖, 新增 jq 用于处理 JSON
+RUN apk update && \
     apk add --no-cache \
-        curl ca-certificates iproute2 net-tools iptables \
-        wireguard-tools openresolv tar bash \
-        sing-box
+    bash \
+    curl \
+    ca-certificates \
+    unzip \
+    jq && \
+    rm -rf /var/cache/apk/*
 
-# 5. (按您要求) WARP 工具安装 (从本地 arm64 文件)
-#    请确保构建目录下存在名为 warp-arm64 的文件
+# 2. 安装 sing-box (linux-arm64)
+RUN LATEST_URL=$(curl -sL "https://api.github.com/repos/SagerNet/sing-box/releases/latest" | grep "browser_download_url" | grep "linux-arm64" | cut -d '"' -f 4) && \
+    curl -sLo /tmp/sing-box.tar.gz "$LATEST_URL" && \
+    tar -xzf /tmp/sing-box.tar.gz -C /tmp && \
+    mv /tmp/sing-box-*/sing-box /usr/local/bin/ && \
+    chmod +x /usr/local/bin/sing-box && \
+    rm -rf /tmp/*
+
+# ==================== ↓↓↓ 这里是修改的部分 ↓↓↓ ====================
+# 3. 下载并固化 Clash API 的 Web UI (zashboard)
+RUN mkdir -p /opt/app/ui && \
+    echo "Downloading zashboard Web UI..." && \
+    curl -sL "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip" -o /tmp/zashboard.zip && \
+    unzip /tmp/zashboard.zip -d /opt/app/ui/ && \
+    echo "UI download complete." && \
+    rm -rf /tmp/zashboard.zip
+# ==================== ↑↑↑ 这里是修改的部分 ↑↑↑ ====================
+
+# 4. 拷贝所有项目文件
+WORKDIR /opt/app
 COPY warp-arm64 /usr/local/bin/warp
-RUN chmod +x /usr/local/bin/warp
+COPY entry.sh .
+COPY config.json.template .
 
-# 6. WGCF 安装 (从网络)
-RUN curl -fsSL git.io/wgcf.sh | bash
+# 5. 拷贝自定义规则文件
+RUN mkdir -p /etc/sing-box/rules
+COPY rules/ /etc/sing-box/rules/
 
-# 7. 设置工作目录、启动脚本，并提供默认启动命令
-WORKDIR /wgcf
-COPY entry.sh /run/entry.sh
-RUN chmod +x /run/entry.sh
+# 6. Final setup
+RUN chmod +x /usr/local/bin/warp && \
+    chmod +x entry.sh
+
+# 7. 创建用于存放最终配置的目录
 RUN mkdir -p /etc/sing-box
-COPY config.json /etc/sing-box/config.json
-ENTRYPOINT ["/run/entry.sh"]
 
-# 默认以 IPv4 模式启动
-CMD ["-4"]
+ENTRYPOINT ["/opt/app/entry.sh"]
