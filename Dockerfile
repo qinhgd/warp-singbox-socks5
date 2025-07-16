@@ -1,8 +1,8 @@
-# 最终版 Dockerfile: arm64 专用, 全自动下载依赖
+# 最终版 Dockerfile: arm64 专用, 全自动下载依赖, 已修复路径问题
 FROM alpine:3.18
 
-# --- 构建参数 (默认使用当前最新稳定版) ---
-ARG SINGBOX_VERSION="1.11.15"
+# --- 构建参数 (默认使用一个已知的稳定版本，可在构建时覆盖) ---
+ARG SINGBOX_VERSION="1.11.13"
 ARG WARP_VERSION="v2.0.2"
 ARG TARGETARCH="arm64"
 
@@ -19,7 +19,8 @@ RUN echo ">>> Downloading Sing-box version: ${SINGBOX_VERSION}" \
     && set -ex \
     && curl -fsSL "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}.tar.gz" -o "/tmp/sing-box.tar.gz" \
     && tar -xzf /tmp/sing-box.tar.gz -C /tmp \
-    && mv "/tmp/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}/sing-box" /usr/local/bin/ \
+    # ✨ FIX: 使用通配符 (*) 查找解压后的目录，更具鲁棒性
+    && mv /tmp/sing-box-*/sing-box /usr/local/bin/ \
     && chmod +x /usr/local/bin/sing-box \
     && rm -rf /tmp/*
 
