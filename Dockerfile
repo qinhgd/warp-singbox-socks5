@@ -15,9 +15,10 @@ RUN set -ex && \
 
 # 安装 sing-box（使用官方标准包，支持多架构）
 RUN set -ex && \
-    echo ">>> Downloading Sing-box ${SINGBOX_VERSION} for ${TARGETARCH}" && \
+    echo ">>> Building for architecture: ${TARGETARCH}" && \
+    echo ">>> Downloading Sing-box version: ${SINGBOX_VERSION}" && \
     curl -fsSL -o /tmp/singbox.tar.gz \
-      "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}-standard.tar.gz" && \
+      "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-${TARGETARCH}.tar.gz" && \
     tar -xzf /tmp/singbox.tar.gz -C /tmp && \
     mv /tmp/sing-box-*/sing-box /usr/local/bin/sing-box && \
     chmod +x /usr/local/bin/sing-box && \
