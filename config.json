@@ -9,7 +9,14 @@
       "tag": "mixed-in",
       "listen": "0.0.0.0",
       "listen_port": 1080,
-      "sniff": true
+      "sniff": true,
+      "udp_fragment": true 
+    },
+    {
+      "type": "tproxy",     
+      "tag": "tproxy-in",
+      "listen": "127.0.0.1", 
+      "listen_port": 1080    
     }
   ],
   "outbounds": [
@@ -21,7 +28,7 @@
   "route": {
     "rules": [
       {
-        "inbound": ["mixed-in"],
+        "inbound": ["mixed-in", "tproxy-in"],
         "outbound": "direct-out"
       }
     ]
