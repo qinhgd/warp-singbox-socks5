@@ -15,6 +15,7 @@
     {
       "type": "tproxy",     
       "tag": "tproxy-in",
+      "network": "udp",
       "listen": "127.0.0.1", 
       "listen_port": 1080    
     }
