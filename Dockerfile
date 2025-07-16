@@ -2,7 +2,7 @@
 FROM alpine:3.18
 
 # --- 构建参数 (默认使用一个已知的稳定版本，可在构建时覆盖) ---
-ARG SINGBOX_VERSION="1.11.13"
+ARG SINGBOX_VERSION="1.11.15"
 ARG WARP_VERSION="v2.0.2"
 ARG TARGETARCH="arm64"
 
