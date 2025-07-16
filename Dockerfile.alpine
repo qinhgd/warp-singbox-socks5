@@ -1,24 +1,30 @@
-
+# 基础镜像
 FROM alpine:3.17
 
+# 安装依赖
 RUN apk update && apk add --no-cache \
-    curl ca-certificates iproute2 iptables wireguard-tools openresolv tar bash net-tools \
-    && rm -rf /var/cache/apk/*
+    curl ca-certificates iproute2 iptables \
+    wireguard-tools openresolv tar bash net-tools && \
+    rm -rf /var/cache/apk/*
 
-COPY sing-box-linux-arm64.tar.gz /tmp/singbox.tar.gz
-RUN cd /tmp && tar -xf singbox.tar.gz && \
-    mv sing-box /usr/local/bin/sing-box && \
+# 下载并安装 sing-box 官方预编译版 (适用于 arm64)
+ENV SINGBOX_VERSION=1.11.13
+RUN curl -L -o /tmp/singbox.tar.gz https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-arm64.tar.gz && \
+    cd /tmp && tar -xzf singbox.tar.gz && \
+    mv sing-box-${SINGBOX_VERSION}-linux-arm64/sing-box /usr/local/bin/sing-box && \
     chmod +x /usr/local/bin/sing-box && \
     rm -rf /tmp/*
 
+# 安装 warp 优选工具（复制本地预置）
 COPY warp-arm64 /usr/local/bin/warp
 RUN chmod +x /usr/local/bin/warp
 
+# 安装 wgcf
 RUN curl -fsSL git.io/wgcf.sh | bash
 
+# 设置工作目录和启动脚本
 WORKDIR /wgcf
 COPY entry.sh /entry.sh
-COPY singbox.json.template /wgcf/singbox.json.template
 RUN chmod +x /entry.sh
 
 ENTRYPOINT ["/entry.sh"]
